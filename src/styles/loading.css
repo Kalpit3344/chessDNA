@@ -1,0 +1,28 @@
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background: transparent;
+}
+
+.loading-knight {
+    width: clamp(80px, 12vw, 120px);
+    height: auto;
+    animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotateY(0deg);
+    }
+    to {
+        transform: rotateY(360deg);
+    }
+}
+
+.loading-container p {
+    margin-top: 20px;
+    font-size: 1.2rem;
+}

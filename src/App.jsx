@@ -1,169 +1,217 @@
 import { useState } from "react";
 
+import PlayerCard from "./components/PlayerCard";
+import Logo from "./components/Logo";
+import SearchBar from "./components/SearchBar";
+import Nav from "./components/Nav";
+import Loading from "./components/Loading";
+import StatsCard from "./components/StatsCard";
+
+import { usePlayerSearch } from "./hooks/usePlayerSearch";
+import "./styles/App.css";
+
 function App() {
   const [username, setUsername] = useState("");
-  const [player, setPlayer] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [activeDaysCount, setActiveDaysCount] = useState(0);
-  const [totalGames, setTotalGames] = useState(0);
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const currentDate = new Date();
+    return currentDate.toISOString().slice(0, 10);
+  });
+  const [selectedFormat, setSelectedFormat] = useState("Bullet");
+  const [showNavbarSearch, setShowNavbarSearch] = useState(false);
 
-  const handleSearch = async () => {
-    try {
-      let gameCount = 0;
-      let totalGames = 0;
-      const activeDays = new Set();
+  const formatOptions = ["Bullet", "Blitz", "Rapid"];
 
-      setLoading(true);
-      setError("");
+  const {
+    player,
+    stats,
+    loading,
+    error,
+    searchPlayer,
+    getGamesByDate,
+    lastModified,
+  } = usePlayerSearch();
 
-      const [response, archivesResponse] = await Promise.all([
-        fetch(`https://api.chess.com/pub/player/${username}`),
-        fetch(`https://api.chess.com/pub/player/${username}/games/archives`)
-      ]);
+  const [archiveDayGames, setArchiveDayGames] = useState([]);
 
-      if (!response.ok || !archivesResponse.ok) {
-        throw new Error("User not found");
-      }
-
-      const profileData = await response.json();
-      console.log('profile Data');
-      console.log(profileData);
-
-
-
-      const archivesData = await archivesResponse.json();
-      const archiveResponses = await Promise.all(
-        archivesData.archives.map((url) => fetch(url))
-      );
-
-      // console.log('game data');
-      // console.log(archivesData);
-      // console.log('length of archive : ', archivesData.archives.length);
-
-      const archiveJsons = await Promise.all(
-        archiveResponses.map((response) => response.json())
-      );
-
-
-      for (const archive of archiveJsons) {
-        gameCount += archive.games.length;
-        for (const game of archive.games) {
-          const date = new Date(
-            game.end_time * 1000
-          ).toDateString();
-
-          activeDays.add(date);
-        }
-      }
-      // console.log(activeDays.size);
-      setActiveDaysCount(activeDays.size);
-      setTotalGames(gameCount);
-      const timeClassCount = {};
-
-      for (const archive of archiveJsons) {
-        for (const game of archive.games) {
-          const type = game.time_class;
-
-          timeClassCount[type] =
-            (timeClassCount[type] || 0) + 1;
-        }
-      }
-
-      console.log(timeClassCount);
-      const rulesCount = {};
-
-      for (const archive of archiveJsons) {
-        // for (const game of archive.games) {
-        //   const rule = game.rules;
-
-        //   rulesCount[rule] =
-        //     (rulesCount[rule] || 0) + 1;
-        // }
-        // console.log('let"s see what happen')
-        // for (const archive of archiveJsons) {
-        //   for (const game of archive.games) {
-        //     if (game.rules !== "chess") {
-        //       console.log(game.rules, game.end_time);
-        //     }
-        //   }
-        // }
-      }
-      console.log('total chess games :')
-      for (const archive of archiveJsons) {
-        for (const game of archive.games) {
-          if (game.rules === "chess") {
-            totalGames++;
-          }
-        }
-      }
-      let count = 0;
-      for (const archive of archiveJsons) {
-        for (const game of archive.games) {
-          // console.log(count++);
-          if (game.rules !== "chess") {
-            console.log(game.rules);
-          }
-        }
-      }
-
-      
-      // console.log(totalGames);
-
-      // console.log(rulesCount);
-
-
-      setPlayer(profileData);
-    } catch (err) {
-      setPlayer(null);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  const handleDaySearch = async () => {
+    if (!username.trim()) return;
+    if (!player) {
+      await searchPlayer(username);
     }
+    const games = getGamesByDate(selectedDay, selectedFormat);
+    setArchiveDayGames(games || []);
   };
 
   return (
-    <div>
-      <h1>ChessDaysCount</h1>
-      <input
-        type="text"
-        placeholder="Enter Chess.com username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
-      {loading && <p>Loading...</p>}
-      {error && <p>{error}</p>}
-      <p>Username: {username}</p>
-      <button onClick={handleSearch}>
-        Search
-      </button>
-      {player && (
-        <div>
-          <h2>{player.username}</h2>
+    <div className="app">
+      {!player && !loading && (
+        <main className="home-screen">
+          <Logo />
 
-          <img
-            src={player.avatar}
-            alt="Profile"
-            width="150"
+          <SearchBar
+            username={username}
+            setUsername={setUsername}
+            searchPlayer={searchPlayer}
+            variant="hero"
+            placeholder="Enter UserName"
           />
 
-          <p>Name: {player.name}</p>
+          {error && <p className="error-message">{error}</p>}
+        </main>
+      )}
 
-          <p>Followers: {player.followers}</p>
+      {player && (
+        <div className="dashboard-shell">
+          <Nav
+            username={username}
+            setUsername={setUsername}
+            searchPlayer={searchPlayer}
+            showNavbarSearch={showNavbarSearch}
+            setShowNavbarSearch={setShowNavbarSearch}
+          />
 
-          <p>
-            Joined:
-            {new Date(
-              player.joined * 1000
-            ).toLocaleDateString()}
-          </p>
+          {loading ? (
+            <Loading />
+          ) : (
+            <main className="dashboard-main">
+              <section className="dashboard-panel profile-panel">
+                <div className="overview-header">
+                  <div>
+                    <p className="overview-subtitle">Player Profile</p>
+                    <h2>{player.username}</h2>
+                  </div>
+                  <span className="status-pill">{player.status || "Active"}</span>
+                </div>
 
-          <p>Status: {player.status}</p>
-          <p>Active Days: {activeDaysCount}</p>
-          <p>Total Games: {totalGames}</p>
+                <PlayerCard
+                  player={player}
+                  activeDaysCount={stats.activeDays}
+                  totalGames={stats.totalGames}
+                  lastModified={lastModified}
+                />
+              </section>
+
+              <section className="dashboard-panel stats-panel">
+                <div className="panel-heading">
+                  <p className="panel-overline">ALL-AROUND GAME STATS</p>
+                </div>
+                <div className="stats-grid">
+                  <StatsCard title="Active Days" value={stats.activeDays} />
+                  <StatsCard title="Total Games" value={stats.totalGames} />
+                  <StatsCard title="Followers" value={player.followers} />
+                </div>
+              </section>
+
+              <aside className="dashboard-side">
+                <div className="dashboard-card insights-card">
+                  <p className="panel-overline">Today&apos;s Insights</p>
+                  <div className="today-insights-list">
+                    <div className="insight-row">
+                      <span>Matches</span>
+                      <strong>{stats.todayGames}</strong>
+                    </div>
+                    <div className="insight-row">
+                      <span>Won</span>
+                      <strong>{stats.todayWins}</strong>
+                    </div>
+                    <div className="insight-row">
+                      <span>Loss</span>
+                      <strong>{stats.todayLosses}</strong>
+                    </div>
+                    <div className="insight-row">
+                      <span>Draw</span>
+                      <strong>{stats.todayDraws}</strong>
+                    </div>
+                    <div className="insight-row">
+                      <span>Win Rate</span>
+                      <strong>{`${stats.todayWinRate}%`}</strong>
+                    </div>
+                    <div className="insight-row">
+                      <span>Loss Rate</span>
+                      <strong>{`${stats.todayLossRate}%`}</strong>
+                    </div>
+                    <div className="insight-row">
+                      <span>Draw Rate</span>
+                      <strong>{`${stats.todayDrawRate}%`}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dashboard-card input-card">
+                  <p className="panel-overline">Search For Day Game</p>
+                  <input
+                    type="date"
+                    className="sidebar-input"
+                    value={selectedDay}
+                    onChange={(e) => setSelectedDay(e.target.value)}
+                  />
+                  <p className="panel-overline">Game Format</p>
+                  <select
+                    className="sidebar-input"
+                    value={selectedFormat}
+                    onChange={(e) => setSelectedFormat(e.target.value)}
+                  >
+                    {formatOptions.map((format) => (
+                      <option key={format} value={format}>
+                        {format}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="sidebar-button"
+                    onClick={handleDaySearch}
+                    disabled={!username.trim()}
+                  >
+                    Search
+                  </button>
+                </div>
+
+                <div className="dashboard-card archive-card">
+                  <p className="panel-overline">GAME ARCHIVE</p>
+                  <p>Browse monthly archives for trends and performance snapshots.</p>
+                  <div className="archive-today">
+                    <span className="panel-overline">Selected day / format games</span>
+                    <strong>{archiveDayGames.length}</strong>
+                  </div>
+                  {archiveDayGames && archiveDayGames.length > 0 ? (
+                    <ul className="archive-list">
+                      {archiveDayGames.map((g, idx) => (
+                        <li key={idx} className="archive-item">
+                          <div>
+                            <div className="archive-players">
+                              <strong>{g.white.username}</strong>
+                              <span>vs</span>
+                              <strong>{g.black.username}</strong>
+                            </div>
+                            <div className="archive-meta">
+                              <span>White:  {g.white.rating || "-"}</span>
+                              <span>&nbsp; B:  {g.black.rating || "-"}</span>
+                            </div>
+                          </div>
+                          <div className="archive-actions">
+                            <span className={`result ${g.outcome || ""}`}>
+                              {g.outcome || "-"}
+                            </span>
+                            {g.url ? (
+                              <a href={g.url} target="_blank" rel="noreferrer">View</a>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ marginTop: '0.8rem', color: 'var(--muted)' }}>No games for selected day.</p>
+                  )}
+                </div>
+              </aside>
+            </main>
+          )}
+
+          {error && <p className="error-message">{error}</p>}
         </div>
       )}
 
+      {!player && loading && <Loading />}
     </div>
   );
 }

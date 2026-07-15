@@ -1,0 +1,20 @@
+ #userInfo {
+    display: flex;
+    flex-direction: column;
+  
+    align-items: center;
+    background-color: #0c0c0c;
+}
+p {
+    line-height: 1rem;
+}
+
+#baseStates {
+    display: flex;
+    flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+    
+    height:10rem;
+} 
+

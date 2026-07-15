@@ -1,0 +1,76 @@
+@font-face {
+  font-family: "zenzai";
+  src: url("../assests/fonts/Zenzai Itacha.ttf") format("truetype");
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  flex-wrap: wrap;
+}
+
+#navlogo {
+  font-family: "zenzai", sans-serif;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  color: #f5f4fb;
+  margin: 0;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-container.navbar {
+  width: min(100%, 420px);
+}
+
+@media (max-width: 720px) {
+  .navbar {
+    justify-content: space-between;
+  }
+
+  .search-container.navbar {
+    width: 100%;
+  }
+}
+
+.navbar-search-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+
+}
+
+.nav-search-toggle,
+.nav-search-close {
+  border: none;
+  background: transparent;
+  color: white;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.18s ease, background-color 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-search-toggle img {
+  width: 20px;
+  height: 20px;
+}
+
+  
+.nav-search-toggle:hover,
+.nav-search-close:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+}
