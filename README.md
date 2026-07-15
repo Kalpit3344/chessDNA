@@ -1,17 +1,85 @@
-# React + Vite
+<<<<<<< HEAD
+# ChessDaysCount
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A small React + Vite app that fetches a Chess.com player's profile and game archives to visualize account statistics and calculate the number of unique days the player was active (played at least one game).
 
-Currently, two official plugins are available:
+This repository contains a lightweight single-page UI where you enter a Chess.com username and the app fetches the public Chess.com API to compute:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Number of unique active chess days (count of distinct dates when at least one game ended)
+- Total number of games fetched
+- Basic profile information (username, avatar, name, followers, join date)
 
-## React Compiler
+Why this project
+- Quick way to inspect activity for a Chess.com account without downloading game PGNs manually
+- Demonstrates fetching paginated archive endpoints and processing the returned game metadata
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Contents
+- index.html — app entry HTML
+- src/ — React source (App.jsx, CSS, main.jsx)
+- package.json — project metadata and scripts
+- vite.config.js — Vite configuration
 
-## Expanding the ESLint configuration
+Local development
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-g
+Requirements
+- Node.js 18+ and npm (or pnpm/yarn)
+
+Install and run
+
+1. Install dependencies:
+
+   npm install
+
+2. Start dev server:
+
+   npm run dev
+
+3. Open the app in your browser (Vite will print the local URL, usually http://localhost:5173)
+
+Usage
+
+- Type a Chess.com username into the input and click Search.
+- The app calls the public Chess.com API endpoints:
+  - https://api.chess.com/pub/player/{username}
+  - https://api.chess.com/pub/player/{username}/games/archives
+  - then fetches each archive URL to collect games
+- The UI displays profile info, the calculated number of active days, and total games.
+
+Notes and caveats
+
+- This app queries the public Chess.com API from the browser. Be mindful of rate limits and network errors — repeated or heavy requests may be limited by the API.
+- If a user has many archived months/years, the client will fetch each archive URL which can take time and bandwidth.
+- Some games may not be of the `chess` ruleset (for example variants) — the app currently filters/counts only games where `game.rules === "chess"` when computing the total chess games.
+
+Testing and linting
+
+- Run the linter:
+
+  npm run lint
+
+Build
+
+- To create a production build:
+
+  npm run build
+
+- Preview the production build locally:
+
+  npm run preview
+
+Extending the project
+
+- Add charts to visualize activity by month/year or by time controls (time_class)
+- Cache archive results on a backend to avoid repeated heavy requests from the browser
+- Add error handling and progress indicators while fetching large archives
+
+License
+
+Add a LICENSE file to this repository and choose a license (e.g., MIT) if you want to allow others to reuse the code.
+
+Acknowledgements
+
+- Uses the public Chess.com API: https://www.chess.com/news/view/published-data-api
+=======
+A React-based Chess.com analytics tool that fetches player profiles and game archives to visualize account statistics and calculate unique active chess days.
+>>>>>>> 9827b69 (prototype push of chess project)
