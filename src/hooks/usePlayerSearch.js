@@ -4,7 +4,7 @@ import {
   getPlayer,
   getArchives,
   getArchiveGames,
-} from "../services/chessApi";
+} from "../services/ChessApi";
 
 import { gameDaysCount } from "../utils/gameDaysCount";
 

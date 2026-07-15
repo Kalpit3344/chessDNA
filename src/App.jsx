@@ -12,7 +12,7 @@ import "./styles/App.css";
 
 function App() {
 
-  
+
   const [username, setUsername] = useState("");
   const [selectedDay, setSelectedDay] = useState(() => {
     const currentDate = new Date();
@@ -43,6 +43,11 @@ function App() {
       {!player && !loading && (
         <main className="home-screen">
           <Logo />
+          <p className="home-instructions">
+            Start by entering a Chess.com username above. Once loaded, use the sidebar to
+            pick a date and format, then review the archive games and today's performance.
+            Use the search icon in the navbar to switch to a different player at any time.
+          </p>
 
           <SearchBar
             username={username}
