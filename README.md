@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # ChessDaysCount
 
 A small React + Vite app that fetches a Chess.com player's profile and game archives to visualize account statistics and calculate the number of unique days the player was active (played at least one game).
@@ -82,4 +82,3 @@ Acknowledgements
 - Uses the public Chess.com API: https://www.chess.com/news/view/published-data-api
 =======
 A React-based Chess.com analytics tool that fetches player profiles and game archives to visualize account statistics and calculate unique active chess days.
->>>>>>> 9827b69 (prototype push of chess project)
