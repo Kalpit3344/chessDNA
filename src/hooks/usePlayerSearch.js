@@ -41,9 +41,18 @@ export function usePlayerSearch() {
     ].includes(normalized);
   };
 
+  const timeClassMap = {
+    bullet: "bullet",
+    blitz: "blitz",
+    rapid: "rapid",
+  };
+
   const getGamesByDate = (dateISO, format = null) => {
     if (!archiveJsons || archiveJsons.length === 0) return [];
     const normalizedFormat = format ? String(format).toLowerCase() : null;
+    const targetFormat = normalizedFormat && timeClassMap[normalizedFormat]
+      ? timeClassMap[normalizedFormat]
+      : normalizedFormat;
     const results = [];
     for (const archive of archiveJsons) {
       if (!archive.games) continue;
@@ -53,8 +62,8 @@ export function usePlayerSearch() {
           .slice(0, 10);
         if (gameDateISO !== dateISO) continue;
 
-        const timeClass = String(game.time_class || game.rules || "").toLowerCase();
-        if (normalizedFormat && normalizedFormat !== timeClass) continue;
+        const timeClass = String(game.time_class || "").toLowerCase();
+        if (targetFormat && targetFormat !== timeClass) continue;
 
         const outcome = getPlayerOutcome(game, (player && player.username) || "");
 

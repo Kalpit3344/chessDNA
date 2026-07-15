@@ -1,43 +1,30 @@
+const CACHE_TTL = 1000 * 60 * 10; // 10 minutes
+const cacheStore = {
+  player: new Map(),
+  archives: new Map(),
+  archiveGames: new Map(),
+};
 
-//fetchs player's username
-export const getPlayer = async (username) => {
-  const useProxy = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_USE_PROXY === 'true';
+const getCached = (store, key) => {
+  const entry = store.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expires) {
+    store.delete(key);
+    return null;
+  }
+  return entry.value;
+};
 
-  if (useProxy) {
-    // Expect proxy to return { profile, lastModified }
-    const proxyUrl = `http://localhost:4000/player/${encodeURIComponent(username)}`;
-    const response = await fetch(proxyUrl);
-    if (response.status === 404) {
-      throw new Error("User not found");
-    }
-    if (!response.ok) {
-      throw new Error("Something went wrong");
-    }
-    const body = await response.json();
-    const profile = body && body.profile ? body.profile : body;
-    const lastModified = body && body.lastModified ? body.lastModified : null;
-    try {
-      Object.defineProperty(profile, "_lastModified", {
-        value: lastModified,
-        enumerable: false,
-        writable: false,
-      });
-    } catch (e) {
-      profile._lastModified = lastModified;
-    }
-    return profile;
-  }
+const setCached = (store, key, value) => {
+  store.set(key, {
+    value,
+    expires: Date.now() + CACHE_TTL,
+  });
+};
 
-  // default: direct fetch from Chess.com (may not expose headers due to CORS)
-  const response = await fetch(`https://api.chess.com/pub/player/${username}`);
-  if (response.status === 404) {
-    throw new Error("User not found");
-  }
-  if (!response.ok) {
-    throw new Error("Something went wrong");
-  }
-  const lastModified = response.headers.get("last-modified") || null;
-  const json = await response.json();
+const normalizeUsername = (username) => String(username || "").trim().toLowerCase();
+
+const attachLastModified = (json, lastModified) => {
   try {
     Object.defineProperty(json, "_lastModified", {
       value: lastModified,
@@ -49,10 +36,54 @@ export const getPlayer = async (username) => {
   }
   return json;
 };
+
+//fetchs player's username
+export const getPlayer = async (username) => {
+  const normalized = normalizeUsername(username);
+  const cached = getCached(cacheStore.player, normalized);
+  if (cached) return cached;
+
+  const useProxy = typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_USE_PROXY === "true";
+
+  let profile;
+  let lastModified = null;
+
+  if (useProxy) {
+    const proxyUrl = `http://localhost:4000/player/${encodeURIComponent(normalized)}`;
+    const response = await fetch(proxyUrl);
+    if (response.status === 404) {
+      throw new Error("User not found");
+    }
+    if (!response.ok) {
+      throw new Error("Something went wrong");
+    }
+    const body = await response.json();
+    profile = body && body.profile ? body.profile : body;
+    lastModified = body && body.lastModified ? body.lastModified : null;
+  } else {
+    const response = await fetch(`https://api.chess.com/pub/player/${normalized}`);
+    if (response.status === 404) {
+      throw new Error("User not found");
+    }
+    if (!response.ok) {
+      throw new Error("Something went wrong");
+    }
+    lastModified = response.headers.get("last-modified") || null;
+    profile = await response.json();
+  }
+
+  const result = attachLastModified(profile, lastModified);
+  setCached(cacheStore.player, normalized, result);
+  return result;
+};
 // fetchs player's game aarchive
 export const getArchives = async (username) => {
+  const normalized = normalizeUsername(username);
+  const cached = getCached(cacheStore.archives, normalized);
+  if (cached) return cached;
+
   const response = await fetch(
-    `https://api.chess.com/pub/player/${username}/games/archives`
+    `https://api.chess.com/pub/player/${normalized}/games/archives`
   );
 
   if (response.status === 404) {
@@ -63,13 +94,16 @@ export const getArchives = async (username) => {
     throw new Error("Something went wrong");
   }
 
-  return response.json();
+  const result = await response.json();
+  setCached(cacheStore.archives, normalized, result);
+  return result;
 };
 // Fetch all monthly archive URLs in parallel
 export const getArchiveGames = async (archives) => {
+  const cacheKey = JSON.stringify(archives);
+  const cached = getCached(cacheStore.archiveGames, cacheKey);
+  if (cached) return cached;
 
-
-  // Send requests to every archive URL simultaneously
   const responses = await Promise.all(
     archives.map((url) => fetch(url))
   );
@@ -81,8 +115,9 @@ export const getArchiveGames = async (archives) => {
     }
   });
 
-  // Convert all responses into JSON and return them
-  return Promise.all(
+  const result = await Promise.all(
     responses.map((response) => response.json())
   );
+  setCached(cacheStore.archiveGames, cacheKey, result);
+  return result;
 };  

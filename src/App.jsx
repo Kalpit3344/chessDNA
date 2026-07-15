@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import PlayerCard from "./components/PlayerCard";
 import Logo from "./components/Logo";
@@ -11,6 +11,8 @@ import { usePlayerSearch } from "./hooks/usePlayerSearch";
 import "./styles/App.css";
 
 function App() {
+
+  
   const [username, setUsername] = useState("");
   const [selectedDay, setSelectedDay] = useState(() => {
     const currentDate = new Date();
@@ -31,16 +33,10 @@ function App() {
     lastModified,
   } = usePlayerSearch();
 
-  const [archiveDayGames, setArchiveDayGames] = useState([]);
-
-  const handleDaySearch = async () => {
-    if (!username.trim()) return;
-    if (!player) {
-      await searchPlayer(username);
-    }
-    const games = getGamesByDate(selectedDay, selectedFormat);
-    setArchiveDayGames(games || []);
-  };
+  const archiveDayGames = useMemo(() => {
+    if (!player) return [];
+    return getGamesByDate(selectedDay, selectedFormat) || [];
+  }, [player, selectedDay, selectedFormat, getGamesByDate]);
 
   return (
     <div className="app">
@@ -157,20 +153,13 @@ function App() {
                       </option>
                     ))}
                   </select>
-                  <button
-                    className="sidebar-button"
-                    onClick={handleDaySearch}
-                    disabled={!username.trim()}
-                  >
-                    Search
-                  </button>
                 </div>
 
                 <div className="dashboard-card archive-card">
                   <p className="panel-overline">GAME ARCHIVE</p>
                   <p>Browse monthly archives for trends and performance snapshots.</p>
                   <div className="archive-today">
-                    <span className="panel-overline">Selected day / format games</span>
+                    <span className="panel-overline">{selectedFormat} games on {selectedDay}</span>
                     <strong>{archiveDayGames.length}</strong>
                   </div>
                   {archiveDayGames && archiveDayGames.length > 0 ? (

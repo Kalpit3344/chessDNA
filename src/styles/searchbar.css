@@ -50,7 +50,23 @@
   gap: 8px;
   max-width: 100%;
   min-width: 0;
-  flex-wrap: wrap;
+  flex: 1;
+}
+
+.search-container.navbar input {
+  min-width: 0;
+  flex: 1;
+}
+
+@media (max-width: 720px) {
+  .search-container.navbar {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .search-container.navbar button {
+    width: 100%;
+  }
 }
 
 /* Mobile */
