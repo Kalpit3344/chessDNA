@@ -37,37 +37,44 @@ const attachLastModified = (json, lastModified) => {
   return json;
 };
 
+const PROXY_BASE = import.meta.env?.VITE_PROXY_URL ?? "";
+const useProxy = typeof import.meta !== "undefined" && import.meta.env?.VITE_USE_PROXY === "true";
+
+const proxyFetch = async (pathOrUrl) => {
+  const target = pathOrUrl.startsWith("http")
+    ? `${PROXY_BASE}/api/fetch?url=${encodeURIComponent(pathOrUrl)}`
+    : `${PROXY_BASE}/api${pathOrUrl}`;
+  return await fetch(target);
+};
+
+const checkResponse = (response) => {
+  if (response.status === 404) {
+    throw new Error("User not found");
+  }
+  if (!response.ok) {
+    throw new Error("Something went wrong");
+  }
+  return response;
+};
+
 //fetchs player's username
 export const getPlayer = async (username) => {
   const normalized = normalizeUsername(username);
   const cached = getCached(cacheStore.player, normalized);
   if (cached) return cached;
 
-  const useProxy = typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_USE_PROXY === "true";
-
   let profile;
   let lastModified = null;
 
   if (useProxy) {
-    const proxyUrl = `http://localhost:4000/player/${encodeURIComponent(normalized)}`;
-    const response = await fetch(proxyUrl);
-    if (response.status === 404) {
-      throw new Error("User not found");
-    }
-    if (!response.ok) {
-      throw new Error("Something went wrong");
-    }
+    const response = await proxyFetch(`/player/${encodeURIComponent(normalized)}`);
+    checkResponse(response);
     const body = await response.json();
     profile = body && body.profile ? body.profile : body;
     lastModified = body && body.lastModified ? body.lastModified : null;
   } else {
     const response = await fetch(`https://api.chess.com/pub/player/${normalized}`);
-    if (response.status === 404) {
-      throw new Error("User not found");
-    }
-    if (!response.ok) {
-      throw new Error("Something went wrong");
-    }
+    checkResponse(response);
     lastModified = response.headers.get("last-modified") || null;
     profile = await response.json();
   }
@@ -76,28 +83,23 @@ export const getPlayer = async (username) => {
   setCached(cacheStore.player, normalized, result);
   return result;
 };
-// fetchs player's game aarchive
+
+// fetchs player's game archive
 export const getArchives = async (username) => {
   const normalized = normalizeUsername(username);
   const cached = getCached(cacheStore.archives, normalized);
   if (cached) return cached;
 
-  const response = await fetch(
-    `https://api.chess.com/pub/player/${normalized}/games/archives`
-  );
+  const response = useProxy
+    ? await proxyFetch(`/player/${encodeURIComponent(normalized)}/games/archives`)
+    : await fetch(`https://api.chess.com/pub/player/${normalized}/games/archives`);
 
-  if (response.status === 404) {
-    throw new Error("User not found");
-  }
-
-  if (!response.ok) {
-    throw new Error("Something went wrong");
-  }
-
+  checkResponse(response);
   const result = await response.json();
   setCached(cacheStore.archives, normalized, result);
   return result;
 };
+
 // Fetch all monthly archive URLs in parallel
 export const getArchiveGames = async (archives) => {
   const cacheKey = JSON.stringify(archives);
@@ -105,15 +107,9 @@ export const getArchiveGames = async (archives) => {
   if (cached) return cached;
 
   const responses = await Promise.all(
-    archives.map((url) => fetch(url))
+    archives.map((url) => (useProxy ? proxyFetch(url) : fetch(url)))
   );
-  responses.forEach((response) => {
-    if (!response.ok) {
-      throw new Error(
-        "Failed to load archives"
-      );
-    }
-  });
+  responses.forEach(checkResponse);
 
   const result = await Promise.all(
     responses.map((response) => response.json())

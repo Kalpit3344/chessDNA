@@ -92,7 +92,7 @@ function App() {
                 />
               </section>
 
-              <section className="dashboard-panel stats-panel">
+              {/* <section className="dashboard-panel stats-panel">
                 <div className="panel-heading">
                   <p className="panel-overline">ALL-AROUND GAME STATS</p>
                 </div>
@@ -101,7 +101,7 @@ function App() {
                   <StatsCard title="Total Games" value={stats.totalGames} />
                   <StatsCard title="Followers" value={player.followers} />
                 </div>
-              </section>
+              </section> */}
 
               <aside className="dashboard-side">
                 <div className="dashboard-card insights-card">
